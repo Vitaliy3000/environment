@@ -1,5 +1,5 @@
 import datetime
-from blanks import client
+from .main import BaseHttpClient
 from pydantic import BaseModel
 
 
@@ -9,21 +9,14 @@ class MyModel(BaseModel):
     timestamp: datetime.datetime
 
 
-class MyClient(client.BaseHttpClient):
+class MyClient(BaseHttpClient):
     async def get_smth(self) -> MyModel:
-        response = self._client.get("/smth")
+        response = await self.client.get("/smth")
 
         return self._process_response(response, model=MyModel)
 
     async def create_smth(self, data: MyModel) -> MyModel:
-        response = await self._client.post("/smth", json=data.model_dump())
+        response = await self.client.post("/smth", json=data.model_dump_json())
 
         return self._process_response(response, model=MyModel)
 
-
-class TestMyClient:
-    def test_get_smth(self):
-        pass
-
-    def test_create_smth(self):
-        pass
