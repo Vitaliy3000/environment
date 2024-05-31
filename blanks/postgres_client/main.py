@@ -84,20 +84,34 @@ class Repository(typing.Generic[Model]):
 
         return self.model.model_validate(row)
 
-    async def update(self) -> Model:
-        pass
+    async def update(self, model: Model) -> Model:
+        data = model.model_dump()
+
+        stmt = (
+            sa.update(self.table)
+            .where(self.table.c.id == model.id)
+            .values(data)
+            .returning(self.table)
+        )
+
+        async with self._transaction() as transaction:
+            cursor = await transaction.connection.execute(stmt)
+            row = cursor.fetchone()
+
+        return self.model.model_validate(row)
 
     async def delete(self, id: typing.Any) -> Model:
         stmt = (
             sa.delete(self.table)
             .where(self.table.c.id == id)
-            .returning()
+            .returning(self.table)
         )
     
         async with self._transaction() as transaction:
-            await transaction.connection.execute(stmt)
+            cursor = await transaction.connection.execute(stmt)
+            row = cursor.fetchone()
 
-        return 
+        return self.model.model_validate(row)
     
     @asynccontextmanager
     async def _transaction(self) -> AsyncTransaction:
